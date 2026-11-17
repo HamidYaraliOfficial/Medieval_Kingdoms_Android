@@ -1,0 +1,77 @@
+// Copyright (c) 2026 Hamid Yarali. All Rights Reserved.
+import groovy.json.JsonSlurper
+
+plugins {
+    id 'com.android.application'
+}
+
+// Version comes from the game's package.json: 1.2.3 -> versionName "1.2.3", versionCode 10203
+def pkg = new JsonSlurper().parse(file('../../package.json'))
+def parts = pkg.version.tokenize('.').collect { it.toInteger() }
+
+// Release signing: the keystore is read from environment variables (GitHub Actions secrets) or android/keystore/keystore.properties.
+// There is deliberately NO fallback to the debug key: Cafe Bazaar rejects packages signed with it.
+def ksFile = System.getenv('ANDROID_KEYSTORE_PATH')
+def ksAlias = System.getenv('ANDROID_KEY_ALIAS')
+def ksPass = System.getenv('ANDROID_KEYSTORE_PASSWORD')
+def keyPass = System.getenv('ANDROID_KEY_PASSWORD') ?: ksPass
+def propsFile = file('../keystore/keystore.properties')
+if (!ksFile && propsFile.exists()) {
+    def p = new Properties(); propsFile.withInputStream { p.load(it) }
+    ksFile = file('../keystore/' + p.getProperty('storeFile')).absolutePath
+    ksAlias = p.getProperty('keyAlias'); ksPass = p.getProperty('storePassword'); keyPass = p.getProperty('keyPassword') ?: ksPass
+}
+
+android {
+    namespace 'com.hamidyarali.ironcrown'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.hamidyarali.ironcrown'
+        minSdk 24
+        targetSdk 34
+        versionCode parts[0] * 10000 + parts[1] * 100 + parts[2]
+        versionName pkg.version
+    }
+
+    signingConfigs {
+        release {
+            if (ksFile) {
+                storeFile file(ksFile)
+                storePassword ksPass
+                keyAlias ksAlias
+                keyPassword keyPass
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig ksFile ? signingConfigs.release : null
+            debuggable false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    packagingOptions {
+        resources.excludes += ['META-INF/version-control-info.textproto']
+    }
+    androidResources {
+        noCompress += ['png']
+    }
+}
+
+// Refuse to produce a release APK that would not be release-signed.
+tasks.matching { it.name == 'assembleRelease' || it.name == 'bundleRelease' }.configureEach {
+    doFirst {
+        if (!ksFile) throw new GradleException('No release keystore configured. Set ANDROID_KEYSTORE_PATH, ANDROID_KEY_ALIAS and ANDROID_KEYSTORE_PASSWORD (or create android/keystore/keystore.properties). A debug-signed APK is rejected by Cafe Bazaar.')
+        if (!file('src/main/assets/www/index.html').exists()) throw new GradleException('The web payload is missing. Run "node scripts/android_web.mjs" in the project root first.')
+    }
+}
