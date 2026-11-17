@@ -1,0 +1,4 @@
+Signing certificate of IronCrown-1.0.1-release.apk
+Owner : CN=Hamid Yarali, OU=Iron Crown Medieval Kingdoms, O=Hamid Yarali
+SHA-256: ae5b533ad8f79a65ee9717b450e61f4895dbc2c06b282b8dd4cfef4d8d67073d
+(Must NOT be "CN=Android Debug".  Keep using the same key for every update you upload to Cafe Bazaar.)

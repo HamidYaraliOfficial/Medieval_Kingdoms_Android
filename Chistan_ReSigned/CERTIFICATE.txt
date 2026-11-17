@@ -1,0 +1,7 @@
+Signing certificate of Chistan-1.0.0-release-signed.apk (package app.chistan.crossword, versionCode 1)
+Owner : CN=Hamid Yarali, OU=Chistan, O=Hamid Yarali
+SHA-256: 7debbddcffe52a8eedb04e86c93225b97989d3b889143fdc660b839f7e8c51ec
+Signature schemes: v2, v3 (verified with uber-apk-signer / apksigner logic)
+Original file: Chistan.apk, signed with "Android Debug" (SHA-256 53ce165a79e5d1da9395e78e6ce50325267dde0d88de5f7df21f072603a0158d) - rejected by Cafe Bazaar.
+Only the signature was replaced; every other file in the APK is byte-identical (checked).
+Key: ../Keystore/chistan-release.jks - use it for ALL future Chistan updates.
