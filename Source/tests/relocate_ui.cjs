@@ -1,0 +1,31 @@
+const { chromium } = require('playwright'); const path = require('path');
+(async () => {
+  const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--use-gl=angle', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-webgl', '--allow-file-access-from-files'] });
+  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  page.on('pageerror', (e) => console.log('[pageerror]', String(e).slice(0, 400)));
+  await page.addInitScript(() => { localStorage.setItem('ic_settings', JSON.stringify({ quality: 'low', fpsLimit: 0, autosave: 0, edgeScroll: false })); });
+  await page.goto('file://' + path.resolve(__dirname, '../UI/index.html'));
+  await page.waitForFunction(() => window.__app && !document.getElementById('boot'), null, { timeout: 120000 });
+  await page.evaluate(() => window.__app.startGame({ mode: 'skirmish', mapId: 'greenvalley', size: 'medium', seed: 5, enemies: 1, difficulty: 'normal', army: 8, bonus: { wood: 2000, stone: 800 } }));
+  for (let i = 0; i < 100 && !(await page.evaluate(() => window.__app.playing)); i++) await page.waitForTimeout(300);
+  const info = await page.evaluate(() => {
+    const a = window.__app, g = a.g, cap = g.byId.get(g.teams[0].capitalId);
+    const find = (key, from) => { for (let r = 3; r < 30; r++) for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue; if (g.canPlace(key, 0, from.tx + dx, from.tz + dz, 0, {}).ok) return { tx: from.tx + dx, tz: from.tz + dz }; } };
+    const s = find('house', cap); const b = g.placeBuilding(0, 'house', s.tx, s.tz, 0, { complete: true }).b;
+    const tgt = find('house', { tx: s.tx + 9, tz: s.tz });
+    a.cam.jump(b.cx, b.cz, 30); a.setSpeed(0); a.input.setSel([], b, null);
+    return { id: b.id, tgt, wood: g.teams[0].res.wood };
+  });
+  await page.waitForTimeout(2500);
+  const btn = page.locator('#selpanel .cmd', { hasText: 'Relocate' });
+  console.log('relocate button visible:', await btn.count());
+  await btn.first().click(); await page.waitForTimeout(800);
+  console.log('mode after click:', await page.evaluate(() => window.__app.input.mode));
+  const pt = await page.evaluate((t) => { const a = window.__app; const w = a.renderer.worldToScreen((t.tx + 1) * 2, 0, (t.tz + 1) * 2); return w; }, info.tgt);
+  await page.mouse.move(pt.x, pt.y, { steps: 3 }); await page.waitForTimeout(1500);
+  await page.screenshot({ path: path.join(__dirname, 'out', 'reloc_ghost.png') });
+  await page.mouse.click(pt.x, pt.y); await page.waitForTimeout(1500);
+  const res = await page.evaluate((i) => { const a = window.__app, g = a.g; const old = g.byId.get(i.id); const houses = g.buildings.filter((b) => b.team === 0 && b.key === 'house'); return { oldGone: !old, houses: houses.map((h) => ({ tx: h.tx, tz: h.tz, built: h.built, prog: h.progress })), mode: a.input.mode, wood: g.teams[0].res.wood }; }, info);
+  console.log(JSON.stringify(info), JSON.stringify(res));
+  await browser.close();
+})().catch((e) => { console.error('FAIL', e); process.exit(1); });

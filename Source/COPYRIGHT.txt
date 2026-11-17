@@ -1,0 +1,8 @@
+Iron Crown: Medieval Kingdoms
+Developer: Hamid Yarali  (حمید یارعلی)
+
+Copyright © 2026 Hamid Yarali. All Rights Reserved.
+
+The game's code, 3D models, textures, music, sound effects, icon, user interface
+and text were created for this project. Third-party components that are bundled
+with the game keep their own licences; see THIRD_PARTY_ASSETS.md.

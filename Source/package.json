@@ -1,0 +1,25 @@
+{
+  "name": "iron-crown-medieval-kingdoms",
+  "productName": "Iron Crown: Medieval Kingdoms",
+  "version": "1.0.1",
+  "description": "Iron Crown: Medieval Kingdoms - a 3D medieval real-time strategy game.",
+  "author": "Hamid Yarali",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "electron/main.cjs",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "npm run build && electron .",
+    "package": "node scripts/package.mjs",
+    "installer": "node scripts/installer.mjs",
+    "dist": "npm run build && npm run package && npm run installer",
+    "test": "node tests/sim.mjs"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "electron": "^45.2.3",
+    "esbuild": "^0.28.2",
+    "resedit": "^3.1.0",
+    "three": "^0.187.0"
+  }
+}
